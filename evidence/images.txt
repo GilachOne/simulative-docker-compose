@@ -1,0 +1,4 @@
+CONTAINER                            REPOSITORY                             TAG                 PLATFORM            IMAGE ID            SIZE                CREATED
+simulative-docker-final-nginx-1      gilachone/simulative-docker-nginx      1.0                 linux/amd64         a60cb2848a15        26MB                33 seconds ago
+simulative-docker-final-postgres-1   gilachone/simulative-docker-postgres   1.0                 linux/amd64         4c0337f976c9        116MB               33 seconds ago
+simulative-docker-final-python-1     gilachone/simulative-docker-python     1.0                 linux/amd64         8cc41ef13ed8        51.9MB              33 seconds ago

@@ -1,0 +1,59 @@
+name: simulative-docker-final
+services:
+  postgres:
+    image: ${DOCKERHUB_USER:-local}/simulative-docker-postgres:1.0
+    build: ./postgres
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python init_env.py}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [shop]
+    mem_limit: 192m
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U shop -d shop']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  python:
+    image: ${DOCKERHUB_USER:-local}/simulative-docker-python:1.0
+    build: ./app
+    environment:
+      DB_HOST: postgres
+      DB_NAME: shop
+      DB_USER: shop
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Run python init_env.py}
+    networks: [shop]
+    mem_limit: 192m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  nginx:
+    image: ${DOCKERHUB_USER:-local}/simulative-docker-nginx:1.0
+    build: ./nginx
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8090}:80'
+    volumes:
+      - nginx_logs:/var/log/nginx
+    networks: [shop]
+    mem_limit: 64m
+    depends_on:
+      python:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1/health']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+networks:
+  shop:
+    driver: bridge
+volumes:
+  pgdata:
+  nginx_logs:

@@ -1,0 +1,4 @@
+NAME                                 IMAGE                                      COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+simulative-docker-final-nginx-1      gilachone/simulative-docker-nginx:1.0      "/docker-entrypoint.…"   nginx      18 seconds ago   Up 5 seconds (healthy)    127.0.0.1:8090->80/tcp
+simulative-docker-final-postgres-1   gilachone/simulative-docker-postgres:1.0   "docker-entrypoint.s…"   postgres   19 seconds ago   Up 17 seconds (healthy)   5432/tcp
+simulative-docker-final-python-1     gilachone/simulative-docker-python:1.0     "gunicorn --bind 0.0…"   python     19 seconds ago   Up 11 seconds (healthy)   8000/tcp
