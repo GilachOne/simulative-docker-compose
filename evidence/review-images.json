@@ -1,0 +1,23 @@
+[
+  {
+    "image": "gilachone/simulative-docker-postgres:1.1",
+    "digests": [
+      "gilachone/simulative-docker-postgres@sha256:46e3bb563292675670c17c70c0ba252ce3ba53e58472500cf896f07f7a2267f9"
+    ],
+    "architecture": "amd64"
+  },
+  {
+    "image": "gilachone/simulative-docker-python:1.1",
+    "digests": [
+      "gilachone/simulative-docker-python@sha256:4fdf6c87bb0b9a1efa70d6bcf682ce5a8b703561068efb567a1d49a8f746b3f1"
+    ],
+    "architecture": "amd64"
+  },
+  {
+    "image": "gilachone/simulative-docker-nginx:1.1",
+    "digests": [
+      "gilachone/simulative-docker-nginx@sha256:cad2daaa856c8ae2788e2b51a127ebdfc2133f11f4b4c4fe5334b33fe385696e"
+    ],
+    "architecture": "amd64"
+  }
+]

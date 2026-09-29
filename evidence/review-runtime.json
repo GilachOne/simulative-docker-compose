@@ -1,0 +1,41 @@
+[
+  {
+    "service": "postgres",
+    "healthy": true,
+    "restart": "unless-stopped",
+    "timezone": "Europe/Moscow",
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "50m"
+      }
+    }
+  },
+  {
+    "service": "python",
+    "healthy": true,
+    "restart": "unless-stopped",
+    "timezone": "Europe/Moscow",
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "50m"
+      }
+    }
+  },
+  {
+    "service": "nginx",
+    "healthy": true,
+    "restart": "unless-stopped",
+    "timezone": "Europe/Moscow",
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "50m"
+      }
+    }
+  }
+]

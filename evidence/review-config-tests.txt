@@ -1,0 +1,9 @@
+test_blank_optional_variables_use_defaults (__main__.ConfigTests.test_blank_optional_variables_use_defaults) ... ok
+test_explicit_port_and_password_are_preserved (__main__.ConfigTests.test_explicit_port_and_password_are_preserved) ... ok
+test_invalid_port_has_clear_error (__main__.ConfigTests.test_invalid_port_has_clear_error) ... ok
+test_required_variables_name_missing_setting (__main__.ConfigTests.test_required_variables_name_missing_setting) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 5.066s
+
+OK

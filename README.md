@@ -1,59 +1,96 @@
 # Магазин: Docker Compose
 
-Финальная практика модуля Docker: https://app.simulative.ru/course/34/1708
+Финальная практика: https://app.simulative.ru/course/34/1708
 
-Небольшой отчет о продажах. PostgreSQL хранит данные, Python читает их и отдает JSON, Nginx показывает страницу и передает запросы API в Python.
+PostgreSQL хранит восемь учебных продаж, Python отдаёт JSON, Nginx показывает страницу и проксирует API.
 
-## Запуск
+## Запуск готовых образов
 
-Нужны Docker Engine с Compose и Python 3 для создания локального `.env`.
+Нужны Docker Engine с Compose или Docker Desktop в режиме Linux-контейнеров. Python на хосте не нужен. Образы `1.1` опубликованы для `linux/amd64`.
+
+Скопируйте весь шаблон настроек и при необходимости измените значения:
 
 ```sh
-python3 init_env.py
-docker compose up -d --build --wait
+cp .env.example .env
 ```
 
-Открыть http://localhost:8090. На удаленной машине можно использовать SSH-туннель: `ssh -L 8090:127.0.0.1:8090 root@SERVER_IP`, затем открыть тот же адрес на своем компьютере.
+В PowerShell:
 
-## Устройство
+```powershell
+Copy-Item .env.example .env
+```
 
-- `postgres/` — PostgreSQL 16 и восемь учебных продаж. Данные создаются только при первом запуске с пустым томом.
-- `app/` — Flask, psycopg2 и Gunicorn. Маршруты `/api/sales`, `/api/summary`, `/health`.
-- `nginx/` — статическая страница и reverse proxy.
-- `pgdata` сохраняет БД, `nginx_logs` — логи веб-сервера.
-- Сервисы соединены собственной bridge-сетью `shop`. БД и Python не публикуют порты хоста. Веб-порт доступен на localhost.
-- Запуск идет после успешных healthcheck зависимостей. Пароль берется из `.env`; он не включен в код, архив и Docker-образы.
+Скачать и запустить — две отдельные команды:
 
-## Проверка
+```sh
+docker compose --env-file .env pull
+docker compose --env-file .env up -d --wait
+```
+
+Открыть http://localhost:8090 (или порт из `WEB_PORT`). В основном `docker-compose.yml` только `image`, без `build`: для запуска исходники приложения не нужны. Публичные образы можно скачать без входа в Docker Hub.
+
+## Локальная сборка
+
+Отдельный файл `compose.build.yaml` подключается явно. Он не участвует в обычном запуске.
+
+```sh
+docker compose --env-file .env -f docker-compose.yml -f compose.build.yaml build
+docker compose --env-file .env up -d --pull never --wait
+```
+
+После этого контейнеры можно перезапускать без повторной сборки:
+
+```sh
+docker compose --env-file .env restart
+```
+
+Для публикации своих образов укажите свой `DOCKERHUB_USER` и новый `IMAGE_TAG` в `.env`, соберите их командой выше, затем:
+
+```sh
+docker login
+docker compose --env-file .env -f docker-compose.yml -f compose.build.yaml push
+```
+
+## Настройки
+
+`.env.example` содержит все параметры: `DOCKERHUB_USER`, `IMAGE_TAG`, `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `WEB_PORT`, `TZ`, `PGTZ`. Генератор `init_env.py` удалён: копирование шаблона не теряет переменные.
+
+- В Compose есть значения по умолчанию, включая демонстрационный пароль `shop_password`. Можно запустить стенд и без `.env` командой `docker compose up -d --wait`.
+- `POSTGRES_PORT` меняет порт PostgreSQL внутри сети и порт подключения Python. Порт БД на хост не публикуется. `POSTGRES_HOST` по умолчанию равен имени сервиса `postgres`.
+- Общий YAML-блок задаёт всем сервисам `restart: unless-stopped`, сеть `shop`, таймзоны и ротацию логов `json-file` (50 МБ × 3 файла на контейнер). Отдельное слияние `environment` сохраняет таймзоны при добавлении переменных БД.
+- Healthcheck PostgreSQL использует переменные самого контейнера: `$${POSTGRES_USER}`, `$${POSTGRES_DB}`, `$${PGPORT}`. Двойной доллар откладывает подстановку до запуска проверки внутри контейнера; значения поступают из `.env` через `environment`.
+- При запуске Python отдельно от Compose задайте `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` в его окружении. Хост и порт имеют defaults `postgres` и `5432`; обязательные параметры проверяются при старте, ошибки называют переменную, но не раскрывают её значение.
+- Изменение пользователя, БД или пароля в `.env` не переименовывает и не перенастраивает уже созданную БД в томе. Новые параметры инициализации проверяйте с новым Compose-проектом/пустым томом либо меняйте существующую БД средствами PostgreSQL.
+
+## Устройство и проверка
+
+- `postgres/` — PostgreSQL 16 и SQL начальных данных; SQL выполняется только на пустом томе.
+- `app/` — Flask, psycopg2, Gunicorn; `/api/sales`, `/api/summary`, `/health`.
+- `nginx/` — страница и reverse proxy.
+- `pgdata` сохраняет БД; `nginx_logs` — каталог логов Nginx.
+- БД и Python доступны внутри bridge-сети. HTTP опубликован только на localhost; удалённый стенд можно открыть через `ssh -L 8090:127.0.0.1:8090 USER@SERVER_IP`.
+- Сервисы запускаются после успешного healthcheck зависимостей.
 
 ```sh
 curl -f http://localhost:8090/health
 curl -f http://localhost:8090/api/summary
-docker compose ps
-docker compose restart
+docker compose --env-file .env ps
+docker compose --env-file .env restart
+curl -f http://localhost:8090/api/summary
 ```
 
-Ожидаемый результат: 8 продаж, 27 единиц товара, выручка 8460.00 руб. После перезапуска данные сохраняются.
+В Windows используйте `curl.exe`. Ожидается 8 продаж, 27 единиц товара, выручка 8460.00 руб. После перезапуска данные сохраняются; HTTP проверяйте после возвращения сервисов в `healthy`.
 
-`docker compose down` останавливает стенд и сохраняет данные. Опция `-v` удаляет тома и данные, для обычной остановки она не нужна.
+`docker compose down` сохраняет тома. `down -v` удаляет данные и для обычной остановки не нужен.
 
-## Образы Docker Hub
+## Docker Hub
 
-Опубликованные образы (тег `1.0`):
+Тег обновлённой работы: `1.1`.
 
 - https://hub.docker.com/r/gilachone/simulative-docker-postgres
 - https://hub.docker.com/r/gilachone/simulative-docker-python
 - https://hub.docker.com/r/gilachone/simulative-docker-nginx
 
-Для запуска готовых образов добавьте `DOCKERHUB_USER=gilachone` в созданный `.env` и выполните `docker compose up -d --no-build --pull always --wait`.
+Результаты проверок находятся в `evidence/`; старые файлы без `review-` относятся к версии 1.0.
 
-Укажите `DOCKERHUB_USER` в `.env`, войдите через `docker login`, затем:
-
-```sh
-docker compose build
-docker compose push
-```
-
-На другой машине после создания `.env` с тем же `DOCKERHUB_USER`: `docker compose up -d --no-build --pull always --wait`.
-
-Результаты запуска и проверки сохранения данных лежат в `evidence/`.
+Подстановка переменных описана в [документации Docker Compose](https://docs.docker.com/reference/compose-file/interpolation/).

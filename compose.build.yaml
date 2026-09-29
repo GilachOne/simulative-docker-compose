@@ -1,0 +1,10 @@
+# Подключается только для локальной сборки.
+services:
+  postgres:
+    build: ./postgres
+
+  python:
+    build: ./app
+
+  nginx:
+    build: ./nginx
